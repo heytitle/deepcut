@@ -11,7 +11,7 @@ import scipy.sparse as sp
 import six
 from keras import backend
 
-from .model import get_convo_nn2
+from .model import get_convo_nn2, shrink_model
 from .stop_words import THAI_STOP_WORDS
 from .utils import CHAR_TYPES_MAP, CHARS_MAP, create_feature_array
 
@@ -130,8 +130,17 @@ class DeepcutTokenizer(object):
 
     def __init__(self, ngram_range=(1, 1), stop_words=None,
                  max_df=1.0, min_df=1, max_features=None, dtype=np.dtype('float64')):
-        self.model = get_convo_nn2()
-        self.model.load_weights(WEIGHT_PATH)
+        model = get_convo_nn2()
+
+        model.load_weights(WEIGHT_PATH)
+        should_shrink = os.environ.get("DEEPCUT_SHINKED_MODEL", False)
+        if should_shrink:
+            print("Using shrinked model")
+            self.model = shrink_model(model)
+        else:
+            print("using original model")
+            self.model = model
+
         self.graph = backend.get_session().graph # save graph for reference in async
 
         self.vocabulary_ = {}
